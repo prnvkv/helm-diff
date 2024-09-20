@@ -124,9 +124,27 @@ func ManifestsDiffWithReport(oldIndex, newIndex map[string]*manifest.MappingResu
 	}
 
 	report.print(to)
+	report = filterReportsWithNonZeroDelta(report)
 	return report
 }
 
+func filterReportsWithNonZeroDelta(report Report) Report {
+	var filteredEntries []ReportEntry
+	for _, entry := range report.entries {
+		var filteredDiffs []difflib.DiffRecord
+		for _, diff := range entry.diffs {
+			if diff.Delta != 0 {
+				filteredDiffs = append(filteredDiffs, diff)
+			}
+		}
+		if len(filteredDiffs) > 0 {
+			entry.diffs = filteredDiffs
+			filteredEntries = append(filteredEntries, entry)
+		}
+	}
+	report.entries = filteredEntries
+	return report
+}
 
 func doSuppress(report Report, suppressedOutputLineRegex []string) (Report, error) {
 	if len(report.entries) == 0 || len(suppressedOutputLineRegex) == 0 {
