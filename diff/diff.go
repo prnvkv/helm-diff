@@ -80,6 +80,54 @@ func Manifests(oldIndex, newIndex map[string]*manifest.MappingResult, options *O
 	return seenAnyChanges
 }
 
+// ManifestsDiffWithReport diff on manifests
+func ManifestsDiffWithReport(oldIndex, newIndex map[string]*manifest.MappingResult, options *Options, to io.Writer) Report {
+	report := Report{}
+	report.setupReportFormat(options.OutputFormat)
+	var possiblyRemoved []string
+
+	for _, key := range sortedKeys(oldIndex) {
+		oldContent := oldIndex[key]
+
+		if newContent, ok := newIndex[key]; ok {
+			// modified?
+			doDiff(&report, key, oldContent, newContent, options)
+		} else {
+			possiblyRemoved = append(possiblyRemoved, key)
+		}
+	}
+
+	var possiblyAdded []string
+	for _, key := range sortedKeys(newIndex) {
+		if _, ok := oldIndex[key]; !ok {
+			possiblyAdded = append(possiblyAdded, key)
+		}
+	}
+
+	removed, added := contentSearch(&report, possiblyRemoved, oldIndex, possiblyAdded, newIndex, options)
+
+	for _, key := range removed {
+		oldContent := oldIndex[key]
+		if oldContent.ResourcePolicy != "keep" {
+			doDiff(&report, key, oldContent, nil, options)
+		}
+	}
+
+	for _, key := range added {
+		newContent := newIndex[key]
+		doDiff(&report, key, nil, newContent, options)
+	}
+
+	report, err := doSuppress(report, options.SuppressedOutputLineRegex)
+	if err != nil {
+		panic(err)
+	}
+
+	report.print(to)
+	return report
+}
+
+
 func doSuppress(report Report, suppressedOutputLineRegex []string) (Report, error) {
 	if len(report.entries) == 0 || len(suppressedOutputLineRegex) == 0 {
 		return report, nil
