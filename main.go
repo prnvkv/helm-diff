@@ -9,7 +9,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 
-	"github.com/databus23/helm-diff/v3/cmd"
+	"github.com/prnvkv/helm-diff/v3/cmd"
 )
 
 func main() {
