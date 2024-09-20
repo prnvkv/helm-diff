@@ -1,4 +1,4 @@
-module github.com/databus23/helm-diff/v3
+module github.com/prnvkv/helm-diff/v3
 
 go 1.22.0
 
@@ -7,6 +7,7 @@ toolchain go1.22.4
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a
+	github.com/databus23/helm-diff/v3 v3.9.10
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/gonvenience/bunt v1.3.5
 	github.com/gonvenience/ytbx v1.4.4

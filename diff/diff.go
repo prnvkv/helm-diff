@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/databus23/helm-diff/v3/manifest"
+	"github.com/prnvkv/helm-diff/v3/manifest"
 )
 
 // Options are all the options to be passed to generate a diff
