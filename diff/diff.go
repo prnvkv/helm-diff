@@ -81,7 +81,7 @@ func Manifests(oldIndex, newIndex map[string]*manifest.MappingResult, options *O
 }
 
 // ManifestsDiffWithReport diff on manifests
-func ManifestsDiffWithReport(oldIndex, newIndex map[string]*manifest.MappingResult, options *Options, to io.Writer) Report {
+func ManifestsDiffWithReport(oldIndex, newIndex map[string]*manifest.MappingResult, options *Options, to io.Writer) ParsedReport {
 	report := Report{}
 	report.setupReportFormat(options.OutputFormat)
 	var possiblyRemoved []string
@@ -124,26 +124,54 @@ func ManifestsDiffWithReport(oldIndex, newIndex map[string]*manifest.MappingResu
 	}
 
 	report.print(to)
-	report = filterReportsWithNonZeroDelta(report)
-	return report
+	parsedReport := filterReportsWithNonZeroDelta(report)
+	return parsedReport
 }
 
-func filterReportsWithNonZeroDelta(report Report) Report {
-	var filteredEntries []ReportEntry
+func filterReportsWithNonZeroDelta(report Report) ParsedReport {
+	var parsedEntries []ParsedEntry
 	for _, entry := range report.entries {
-		var filteredDiffs []difflib.DiffRecord
+		var parsedDiffs []ParsedDiff
 		for _, diff := range entry.diffs {
 			if diff.Delta != 0 {
-				filteredDiffs = append(filteredDiffs, diff)
+				parsedDiffs = append(parsedDiffs, ParsedDiff{
+					Payload: diff.Payload,
+					Delta:   int(diff.Delta),
+				})
 			}
 		}
-		if len(filteredDiffs) > 0 {
-			entry.diffs = filteredDiffs
-			filteredEntries = append(filteredEntries, entry)
-		}
+		parsedEntries = append(parsedEntries, ParsedEntry{
+			Key:        entry.key,
+			Kind:       entry.kind,
+			Context:    entry.context,
+			Diffs:      parsedDiffs,
+			ChangeType: entry.changeType,
+		})
 	}
-	report.entries = filteredEntries
-	return report
+
+	return ParsedReport{Entries: parsedEntries}
+
+}
+
+// ParsedReport represents the parsed and organized report
+type ParsedReport struct {
+	Entries []ParsedEntry `json:"entries"`
+}
+
+// ParsedEntry represents a single entry in the parsed report
+type ParsedEntry struct {
+	Key         string       `json:"key"`
+	ReleaseName string       `json:"releaseName"`
+	Kind        string       `json:"kind"`
+	Context     int          `json:"context"`
+	Diffs       []ParsedDiff `json:"diffs"`
+	ChangeType  string       `json:"changeType"`
+}
+
+// ParsedDiff represents a single diff in a parsed entry
+type ParsedDiff struct {
+	Payload string `json:"payload"`
+	Delta   int    `json:"delta"`
 }
 
 func doSuppress(report Report, suppressedOutputLineRegex []string) (Report, error) {
